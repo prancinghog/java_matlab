@@ -10,8 +10,8 @@ public class BinaryRGB{
 	/*
 	 * 二值化处理方法
 	 */
-	private FileOpera op = new FileOpera();
-	private FilePath filepath = new FilePath();
+	private FileOpera op = FileOpera.getInstance();
+	private FilePath filepath = FilePath.getInstance();
 	int width = op.getWidth();
 	int height = op.getHeight();
 	

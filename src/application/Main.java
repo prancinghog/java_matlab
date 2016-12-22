@@ -1,12 +1,16 @@
 package application;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import com.matlab.image.BinaryRGB;
 import com.matlab.image.DealTask;
 import com.matlab.image.FilePath;
-import com.matlab.image.MyArraylist;
+import com.matlab.image.ImageUtil;
 import com.matlab.image.ReStart;
 import com.matlab.image.Rgb2Gray;
 
@@ -31,7 +35,6 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
 	private MyGridPane root = new MyGridPane();
-	private Thread thread;
 	private int valus1=0,valus2=0,valus3=0;
 	private File file_new;
 	private Image image2;
@@ -39,23 +42,25 @@ public class Main extends Application {
 	private Button btnStart,btnGray,btnBinary;
 	private TextField text;
 	private ScrollBar s1,s2,s3;
-	private FilePath filepath = new FilePath();
-	private MyArraylist MyfilePath = new MyArraylist();
+	private FilePath filepath = FilePath.getInstance();
 	int i = 0;
+
+	private ExecutorService threadAgent = Executors.newSingleThreadExecutor();
+
 	@Override
 	public void start(Stage primaryStage) {
 		try {
 			//加载图片资源
-//			File file = new  File("C:/004.png");
+			//			File file = new  File("C:/004.png");
+			if(!filepath.getFile().exists()){
+				System.out.println("请设置FilePath文件路径正确！");
+				throw new FileNotFoundException();
+			}
 			Image image = new Image(filepath.getFile().toURI().toURL().toString());
-//			file_new = new  File("C:/004_new.png");
+			//			file_new = new  File("C:/004_new.png");
 			ImageView view1 = new ImageView(image);
 			image2 = new Image(filepath.getFile().toURI().toURL().toString());
 			view2 = new ImageView(image2);
-			File file = new File(filepath.getUripath_new());
-			if (!file.exists()) {
-				
-			}
 			file_new = filepath.getFile_new();
 			GridPane gridpane = new GridPane();    //图片的布局
 			gridpane.setHgap(20);
@@ -63,10 +68,10 @@ public class Main extends Application {
 			gridpane.setPadding(new Insets(10, 10, 10, 10));
 			gridpane.add(view1, 1, 1);
 			gridpane.add(view2, 2, 1);
-			
+
 			GridPane textpane = new GridPane();
-			
-			
+
+
 			Label uriLabel = new Label("你选择的图片路径：");
 			TextField uri = new TextField();
 			Button serch = new Button("浏览图片");
@@ -84,7 +89,7 @@ public class Main extends Application {
 			btnBinary = new Button("二值化处理");
 			text = new TextField();
 			text.setText("  请执行你需要的操作  ");
-			
+
 			text.setEditable(false);
 			btnPane.add(btnStart, 2, 1);
 			btnPane.add(btnGray, 4, 1);
@@ -105,23 +110,34 @@ public class Main extends Application {
 
 				@Override
 				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-					try {
-						image2 = new Image(file_new.toURI().toURL().toString());
-						view2.setImage(image2);
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					//					try {
+					//						image2 = new Image(file_new.toURI().toURL().toString());
+					//						view2.setImage(image2);
+					//					} catch (MalformedURLException e) {
+					//						// TODO Auto-generated catch block
+					//						e.printStackTrace();
+					//					}
+					//防止过快点击导致启动多次线程
+					if(!ImageUtil.isFastClick()){
+						System.out.println("OnClick");
+						valus1 = (int)s1.getValue();
+						Future<Boolean> future = threadAgent.submit(new DealTask(valus1,valus2,valus3));
+						try {
+							while(true){
+								if(future.isDone()){
+									if(future.get()){
+										image2 = new Image(file_new.toURI().toURL().toString());
+										System.out.println("SetIamge");
+										view2.setImage(image2);
+										break;
+									}
+									break;
+								}
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
-					valus1 = (int)s1.getValue();
-					thread = new Thread(new DealTask(valus1,valus2,valus3));
-					thread.start();
-					try {
-						image2 = new Image(file_new.toURI().toURL().toString());
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					view2.setImage(image2);
 				}
 			});
 			//蓝色通道监听事件
@@ -129,23 +145,34 @@ public class Main extends Application {
 
 				@Override
 				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-					try {
-						image2 = new Image(file_new.toURI().toURL().toString());
-						view2.setImage(image2);
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					//					try {
+					//						image2 = new Image(file_new.toURI().toURL().toString());
+					//						view2.setImage(image2);
+					//					} catch (MalformedURLException e) {
+					//						// TODO Auto-generated catch block
+					//						e.printStackTrace();
+					//					}
+					//防止过快点击导致启动多次线程
+					if(ImageUtil.isFastClick()){
+						return;
 					}
 					valus2 = (int)s2.getValue();
-					thread = new Thread(new DealTask(valus1,valus2,valus3));
-					thread.start();
+					Future<Boolean> future = threadAgent.submit(new DealTask(valus1,valus2,valus3));
 					try {
-						image2 = new Image(file_new.toURI().toURL().toString());
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
+						while(true){
+							if(future.isDone()){
+								if(future.get()){
+									image2 = new Image(file_new.toURI().toURL().toString());
+									System.out.println("SetIamge");
+									view2.setImage(image2);
+									break;
+								}
+								break;
+							}
+						}
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					view2.setImage(image2);
 
 				}
 			});
@@ -154,23 +181,34 @@ public class Main extends Application {
 
 				@Override
 				public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-					try {
-						image2 = new Image(file_new.toURI().toURL().toString());
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					//					try {
+					//						image2 = new Image(file_new.toURI().toURL().toString());
+					//					} catch (MalformedURLException e) {
+					//						// TODO Auto-generated catch block
+					//						e.printStackTrace();
+					//					}
+					//防止过快点击导致启动多次线程
+					if(ImageUtil.isFastClick()){
+						return;
 					}
 					view2.setImage(image2);
 					valus3 = (int)s3.getValue();
-					thread = new Thread(new DealTask(valus1,valus2,valus3));
-					thread.start();
+					Future<Boolean> future = threadAgent.submit(new DealTask(valus1,valus2,valus3));
 					try {
-						image2 = new Image(file_new.toURI().toURL().toString());
-					} catch (MalformedURLException e) {
-
+						while(true){
+							if(future.isDone()){
+								if(future.get()){
+									image2 = new Image(file_new.toURI().toURL().toString());
+									System.out.println("SetIamge");
+									view2.setImage(image2);
+									break;
+								}
+								break;
+							}
+						}
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					view2.setImage(image2);
 
 				}
 			});
@@ -221,7 +259,7 @@ public class Main extends Application {
 				}
 			});
 			serch.setOnAction(new EventHandler<ActionEvent>() {
-				
+
 				@Override
 				public void handle(ActionEvent event) {
 					FileChooser choose = new FileChooser();
@@ -233,13 +271,13 @@ public class Main extends Application {
 						filepath.setUripath(path);
 						uri.setText(values.toString());
 						uri.setEditable(false);
-//						Thread thredMain = new Thread();
-//						thredMain.start();
+						//						Thread thredMain = new Thread();
+						//						thredMain.start();
 					} catch (MalformedURLException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
+
 				}
 			});
 
@@ -266,8 +304,8 @@ public class Main extends Application {
 		s2.setValue(0);
 		s3.setValue(0);
 	}
-	
-	
+
+
 
 	public static void main(String[] args) {
 		launch(args);

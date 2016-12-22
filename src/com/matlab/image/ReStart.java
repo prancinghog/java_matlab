@@ -7,8 +7,8 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 public class ReStart{
-	private FileOpera op = new FileOpera();
-	private FilePath filepath = new FilePath();
+	private FileOpera op = FileOpera.getInstance();
+	private FilePath filepath = FilePath.getInstance();
 	int width = op.getWidth();
 	int height = op.getHeight();
 	

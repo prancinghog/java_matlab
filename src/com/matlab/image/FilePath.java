@@ -2,12 +2,29 @@ package com.matlab.image;
 
 import java.io.File;
 
+/**
+ * 单列模式  文件路径存放此处
+ * @author Administrator
+ *
+ */
 public class FilePath {
 	
-	private String uripath = "/C:/004.png";
-	private String uripath_new = "/C:/My_new.png";
-	private File file = new File("/c:/004.png");
-	private File file_new = new File("/c:/My_new.png");
+	private static FilePath Instance = null;
+	
+	public static FilePath getInstance() {
+		if(Instance == null){
+			Instance = new FilePath();
+		}
+		return Instance;
+	}
+	
+	private FilePath() {
+	}
+	
+	private String uripath = "C:/004.png";
+	private String uripath_new = "C:/My_new.png";
+	private File file = new File("C:/004.png");
+	private File file_new = new File("C:/My_new.png");
 	public String getUripath() {
 		return uripath;
 	}
